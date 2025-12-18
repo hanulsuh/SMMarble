@@ -208,20 +208,27 @@ void goForward(int player, int step) //make player go "step" steps on the board 
     }
 	
 	int i;
-	void *ptr = smmdb_getData(LISTNO_NODE, smm_players[player].pos) ;
+	void *ptr;
 	
 	ptr = smmdb_getData(LISTNO_NODE, smm_players[player].pos);
-	printf("start from %s\n", smmObj_getObjectName(ptr));
 										
 	//loop : go 1 step at a time
-	//print player destination position
 	for (i=0; i<step; i++)
 	{
+		//플레이어 위치 이동
 		smm_players[player].pos = (smm_players[player].pos + 1)%smm_board_nr;
 		ptr = smmdb_getData(LISTNO_NODE, smm_players[player].pos);
+		//이동 메시지 출력
+		printf("  => moved to %s\n", smmObj_getObjectName(ptr));
 		
-		printf("  => moved to %i (%s)\n", smm_players[player].pos, 
-										smmObj_getObjectName(ptr));
+		//'우리집'을 지나가거나 목적지인 경우
+		if(smm_players[player].pos == 0)
+		{
+			int charge = smmObj_getObjectEnergy(ptr); //집의 에너지 값 확인
+            smm_players[player].energy += charge;     //에너지 충전
+            
+            printf("   -> returned to HOME! energy charged by %i (total : %i)\n", charge, smm_players[player].energy);
+		}
 	}
 }
 
@@ -229,7 +236,7 @@ void goForward(int player, int step) //make player go "step" steps on the board 
 int rolldie(int player) //roll dice
 {
     char c;
-    printf(" Press any key to roll a die (press g to see grade): ");
+    printf("This is %s's turn~~ Press any key to roll a die (press g to see grade): ", smm_players[player].name);
     c = getchar();
     fflush(stdin);
 
@@ -255,17 +262,27 @@ void actionNode(int player) //action code when a player stays at a node
     switch(type)
     {
     	case SMMNODE_TYPE_LECTURE:
-    	//1. 강의 수강 여부 확인
-    	if(findGrade(player, smmObj_getObjectName(ptr)) == NULL) 
-    	{ //2. 현재 에너지가 소요에너지 이상인지 확인
-    		if (smm_players[player].energy >= energy)
-    		{
-    			char answer[30]; //플레이어의 대답(join or drop)을 저장할 문자열
-    			int flag_valid = 0; //유효한 대답(join or drop)인지 확인하는 변수
-    			
-    			do
+    	//1. 수강한 적 있는 강의인 경우
+    	if(findGrade(player, smmObj_getObjectName(ptr)) != NULL) 
+    	{
+			printf("   -> %s has already taken the lecture %s!!\n", smm_players[player].name, smmObj_getObjectName(ptr)); 
+		}
+		//2. 현재 에너지가 적어 강의를 들을 수 없는 경우
+    	else if (smm_players[player].energy < energy)
+    	{
+			printf("  -> %s does not have enough energy to join this lecture %s! (need : %i, current : %i).\n", 
+                   smm_players[player].name, smmObj_getObjectName(ptr), energy, smm_players[player].energy);
+		}
+		//3. 이전에 강의를 들은 적 없고, 에너지가 충분한 경우
+		else
+		{
+			char answer[30]; //플레이어의 대답(join or drop)을 저장할 문자열
+    		int flag_valid = 0; //유효한 대답(join or drop)인지 확인하는 변수
+    		
+    		do
     			{
-					printf("   -> Do you want to join this lecture? or drop? : ");
+					printf("   -> Lecture %s(credit : %i, energy : %i) starts~ Are you going to join? or drop? : ",
+							smmObj_getObjectName(ptr), credit, energy);
     				scanf("%s", answer);
     				fflush(stdin);
     			
@@ -275,7 +292,7 @@ void actionNode(int player) //action code when a player stays at a node
     					smm_players[player].credit += credit;
     					smm_players[player].energy -= energy;
     				
-    					//성적 랜덤 생성
+    					//성적 랜덤 생성 (A+~F)
     					grade = rand() % SMMNODE_MAX_GRADE;
     					gradePtr = smmObj_genObject(smmObj_getObjectName(ptr), SMMNODE_OBJTYPE_GRADE, 
                                                     type, credit, energy, grade);
@@ -286,15 +303,14 @@ void actionNode(int player) //action code when a player stays at a node
         				float avg = calcAverageGrade(player);
                         
                         printf("   -> %s successfully takes the lecture %s with grade %s (average : %f), remained energy : %i)\n", 
-               			 	smm_players[player].name, smmObj_getObjectName(ptr),     
-               				gradeStr[grade], avg, smm_players[player].energy);   
+               			 	smm_players[player].name, smmObj_getObjectName(ptr), gradeStr[grade], avg, smm_players[player].energy);   
                         
                         flag_valid = 1; //반복 종료
 					}
 					//"drop"이라고 답한 경우
 					else if (strcmp(answer, "drop") == 0)
 					{
-						printf("   -> You dropped the lecture.\n");
+						printf("   -> Player %s dropped the lecture %s!\n", smm_players[player].name, smmObj_getObjectName(ptr));
 						
 						flag_valid = 1; //반복 종료
 					}
@@ -306,13 +322,8 @@ void actionNode(int player) //action code when a player stays at a node
                         flag_valid = 0; // 잘못된 입력이므로 다시 반복해야 함
                     }
 				} while (flag_valid == 0);
-			}
-    		else
-            {
-                printf("Not enough energy to join this lecture.\n");
-            }
-    	}
-    		break;
+		}		
+    	break;
     	
 		case SMMNODE_TYPE_RESTAURANT:
 			//보충 에너지만큼 플레이어의 현재 에너지 더하기
@@ -327,8 +338,11 @@ void actionNode(int player) //action code when a player stays at a node
 			//실험 중인 경우
 			if (smm_players[player].flag_experiment == 1)
 			{
-				printf("   -> Experiment time! Let's see if you can satisfy professor (threshold: %i)\n", 
+				printf("   -> Experiment time! Let's see if you can satisfy professor (threshold : %i)\n", 
                   		smm_players[player].exp_threshold);
+                //실험 시도마다 에너지 소모됨
+                smm_players[player].energy -= energy;
+                
                 printf("   Press any key to roll a die (press g to see grade): ");
             	getchar(); 
 				fflush(stdin);
@@ -354,12 +368,9 @@ void actionNode(int player) //action code when a player stays at a node
 			break;
 				
 		case SMMNODE_TYPE_HOME:
-			smm_players[player].energy += energy;
-			
-			printf("   -> %s is at HOME! Energy charged by %i (total : %i)\n", 
-						smm_players[player].name, energy, smm_players[player].energy);
-			
-			//졸업 조건을 충족한 경우인
+			//goForward 함수에서 에너지 받기, 도착 문구 출력하기 등의 동작을 수행함
+
+			//졸업 조건을 충족한 경우
 			if (smm_players[player].credit >= GRADUATE_CREDIT)
 			{
 				smm_players[player].flag_graduated = 1;
@@ -386,7 +397,7 @@ void actionNode(int player) //action code when a player stays at a node
 			break;
 			
 		case SMMNODE_TYPE_FOODCHANCE:
-			printf("   -> %s gets a food chance! press any key to pick a food card:", smm_players[player].name);
+			printf("   -> %s gets a food chance! press any key to pick a food card: ", smm_players[player].name);
 			getchar();  
        		fflush(stdin); 
        		
@@ -579,6 +590,8 @@ int main(int argc, const char * argv[]) {
         //4-2. die rolling (if not in experiment)
         die_result = rolldie(turn);
         
+        printf("--> result : %i\n", die_result);
+        
         //4-3. go forward
         goForward(turn, die_result);
 			
@@ -589,6 +602,39 @@ int main(int argc, const char * argv[]) {
         
 		turn = (turn + 1)%smm_player_nr;        
     }
+    
+    char *gradeStr_result[] = {"A+", "A0", "A-",  "B+", "B0", "B-", 
+    							"C+", "C0", "C-", "D+", "D0", "D-", "F"};
+    //누가 졸업했는지 확인
+    for (int i=0; i<smm_player_nr; i++)
+    {
+        if (smm_players[i].flag_graduated == 1)
+        {
+            printf("\n\n");
+            printf("=======================================================================\n");
+            printf("             CONGRATULATIONS! Player %s has Graduated!                 \n", smm_players[i].name);
+			printf("-----------------------------------------------------------------------\n");
+            printf("                       [ Player History ]                              \n\n");
+            //수강한 과목 가져오기
+			int count = smmdb_len(LISTNO_OFFSET_GRADE + i);
+			
+			for (int j=0; j<count; j++)
+            {
+                //과목 성적 가져오기
+                void *gradeNode = smmdb_getData(LISTNO_OFFSET_GRADE + i, j);
+                
+                //강의 이름, 학점, 성적 가져오기
+                char *lecName = smmObj_getObjectName(gradeNode);
+                int lecCredit = smmObj_getObjectCredit(gradeNode);
+                int lecGrade = smmObj_getObjectGrade(gradeNode);
+
+                //플레이어 이력 출력
+                printf("%s - credit : %i, grade : %s\n", lecName, lecCredit, gradeStr_result[lecGrade]);
+            }
+            
+            printf("=======================================================================\n");
+    	}
+	}
     
     free(smm_players);
  
