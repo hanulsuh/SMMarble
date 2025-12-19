@@ -22,7 +22,7 @@
 #define SMMNODE_TYPE_LECTURE 			0	//강의 노드
 #define SMMNODE_TYPE_RESTAURANT			1	//식당 노드
 #define SMMNODE_TYPE_LABORATORY 		2	//실험실 노드
-#define SMMNODE_TYPE_HOME 			3	//집 노드
+#define SMMNODE_TYPE_HOME 				3	//집 노드
 #define SMMNODE_TYPE_GOTOLAB 			4	//실험실 이동 노드
 #define SMMNODE_TYPE_FOODCHANCE 		5	//음식 찬스 노드
 #define SMMNODE_TYPE_FESTIVAL			6	//축제 노드
