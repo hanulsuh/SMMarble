@@ -8,7 +8,6 @@
 #ifndef smm_object_h
 #define smm_object_h
 
-
 /* node type :
     lecture,
     restaurant,
@@ -19,20 +18,22 @@
     festival
 */
 
-//node type number definition
-#define SMMNODE_TYPE_LECTURE 			0
-#define SMMNODE_TYPE_RESTAURANT			1
-#define SMMNODE_TYPE_LABORATORY 		2
-#define SMMNODE_TYPE_HOME 				3
-#define SMMNODE_TYPE_GOTOLAB 			4
-#define SMMNODE_TYPE_FOODCHANCE 		5
-#define SMMNODE_TYPE_FESTIVAL			6
+//1. 노드 타입 정의
+#define SMMNODE_TYPE_LECTURE 			0	//강의 노드
+#define SMMNODE_TYPE_RESTAURANT			1	//식당 노드
+#define SMMNODE_TYPE_LABORATORY 		2	//실험실 노드
+#define SMMNODE_TYPE_HOME 			3	//집 노드
+#define SMMNODE_TYPE_GOTOLAB 			4	//실험실 이동 노드
+#define SMMNODE_TYPE_FOODCHANCE 		5	//음식 찬스 노드
+#define SMMNODE_TYPE_FESTIVAL			6	//축제 노드
 
-#define SMMNODE_OBJTYPE_BOARD   0
-#define SMMNODE_OBJTYPE_GRADE   1
-#define SMMNODE_OBJTYPE_FOOD 	2
-#define SMMNODE_OBJTYPE_FEST	3
+//2. 객체 타입 정의
+#define SMMNODE_OBJTYPE_BOARD   0	//보드 칸
+#define SMMNODE_OBJTYPE_GRADE   1	//성적
+#define SMMNODE_OBJTYPE_FOOD 	2	//음식 카드
+#define SMMNODE_OBJTYPE_FEST	3	//축제 카드
 
+//최대 성적
 #define SMMNODE_MAX_GRADE       13
 
 /* grade :
@@ -48,15 +49,17 @@
     D+,
     D0,
     D-,
-    F    
+    F
 */
 
-//object generation
+//3. 함수 선언
+
+//객체 생성 함수
 void* smmObj_genObject(char* name, int objType, int type, int credit, int energy, int grade);
 void* smmObj_genFood(char* name, int energy);
 void* smmObj_genFest(char* name);
 
-//current position node information
+//정보 가져오는 함수
 char* smmObj_getObjectName(void *ptr);
 int smmObj_getObjectType(void *ptr);
 int smmObj_getObjectEnergy(void *ptr);
@@ -67,12 +70,5 @@ int smmObj_getObjectGrade(void *ptr);
 char* smmObj_getFoodName(void *ptr);
 int smmObj_getFoodEnergy(void *ptr);
 char* smmObj_getFestName(void *ptr);
-
-//member retrieving
-
-
-//element to string
-
-
 
 #endif /* smm_object_h */
