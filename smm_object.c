@@ -37,7 +37,7 @@ static char smmObj_NodeName[MAX_NODETYPE][MAX_CHARNAME] = {
 	"festival"
 };
 
-//성적을 문자열로 
+//성적을 문자열로 나타내기
 static char smmObj_gradeName[SMMNODE_MAX_GRADE][MAX_CHARNAME] = {
 	"A+",
 	"A0",
@@ -60,8 +60,8 @@ static char smmObj_gradeName[SMMNODE_MAX_GRADE][MAX_CHARNAME] = {
 //1. 일반 객체 구조체
 typedef struct {
 	char name[MAX_CHARNAME];
-	int objType; 	//board or grade or food or festival
-	int type;		//board node type : lecture or ...
+	int objType; 	
+	int type;		
 	int credit;
 	int energy;	
 	int grade;
