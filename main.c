@@ -130,13 +130,22 @@ void printGrades(int player) {
 	int i;
 	void *gradePtr;
 	
+	//수강한 과목 개수
+	int count = smmdb_len(LISTNO_OFFSET_GRADE + player); 
+	
+	//수강한 과목이 없는 경우 (수강 과목과 성적을 출력할 수 없음)
+	if (count == 0) {
+        printf("   -> There is no grade history.\n");
+        return; 
+    }
+	
 	//성적 문자열
 	char *gradeStr[] = {"A+", "A0", "A-",  "B+", "B0", "B-",
 	                    "C+", "C0", "C-", "D+", "D0", "D-", "F"
 	                	};
 	
 	//수강 과목 수만큼 반복
-	for(i=0; i<smmdb_len(LISTNO_OFFSET_GRADE+player); i++)
+	for(i=0; i<count; i++)
 	{
 		gradePtr = smmdb_getData(LISTNO_OFFSET_GRADE + player, i);
 		int gradeNum = smmObj_getObjectGrade(gradePtr); //과목의 성적(숫자) 저장
@@ -206,12 +215,12 @@ void printPlayerStatus(void) {
 
 	for (int i=0; i < smm_player_nr; i++) {
 		//각 플레이어 위치의 노드 정보 가져오기
-		void *ptr = smmdb_getData(LISTNO_NODE, smm_players[i].pos);
+		void *nodePtr = smmdb_getData(LISTNO_NODE, smm_players[i].pos);
 
 		printf("%s at %i.%s",
 		       smm_players[i].name,
 		       smm_players[i].pos,
-		       smmObj_getObjectName(ptr));
+		       smmObj_getObjectName(nodePtr));
 		
 		//플레이어가 실험 중 상태인 경우 (exp.) 출력       
 		if (smm_players[i].flag_experiment == 1) 
@@ -287,7 +296,7 @@ void actionNode(int player) {
 			//강의 노드
 			//1. 수강한 적 있는 강의인 경우
 			if(findGrade(player, smmObj_getObjectName(nodePtr)) != NULL) {
-				printf("   -> %s has already taken the lecture %s!!\n", smm_players[player].name, smmObj_getObjectName(nodePtr));
+				printf("   -> %s already took the lecture %s!!\n", smm_players[player].name, smmObj_getObjectName(nodePtr));
 			}
 			//2. 현재 에너지가 적어 강의를 들을 수 없는 경우
 			else if (smm_players[player].energy < energy) {
@@ -480,9 +489,9 @@ int main(int argc, const char * argv[]) {
 	//정보 읽어오기
 	while ( fscanf(fp, "%s %i %i %i", name, &type, &credit, &energy) == 4 ) { 
 		//파일로부터 보드 관련 정보 저장
-		void* ptr = smmObj_genObject(name, SMMNODE_OBJTYPE_BOARD, type, credit, energy, 0);
+		void* nodePtr = smmObj_genObject(name, SMMNODE_OBJTYPE_BOARD, type, credit, energy, 0);
 
-		smmdb_addTail(LISTNO_NODE, ptr);
+		smmdb_addTail(LISTNO_NODE, nodePtr);
 		smm_board_nr++;
 	}
 
@@ -510,9 +519,9 @@ int main(int argc, const char * argv[]) {
 	//정보 읽어오기
 	while ( fscanf(fp, "%s %i", name, &energy) == 2 ) { 
 		//파일로부터 음식 관련 정보 저장
-		void* ptr = smmObj_genFood(name, energy);
+		void* foodPtr = smmObj_genFood(name, energy);
 
-		smmdb_addTail(LISTNO_FOODCARD, ptr);
+		smmdb_addTail(LISTNO_FOODCARD, foodPtr);
 		smm_food_nr++;
 	}
 
@@ -536,9 +545,9 @@ int main(int argc, const char * argv[]) {
 
 	while ( fscanf(fp, "%s", name) == 1 ) { //read a festival card string
 		//store the parameter set
-		void* ptr = smmObj_genFest(name);
+		void* festPtr = smmObj_genFest(name);
 
-		smmdb_addTail(LISTNO_FESTCARD, ptr);
+		smmdb_addTail(LISTNO_FESTCARD, festPtr);
 		smm_festival_nr++;
 	}
 
