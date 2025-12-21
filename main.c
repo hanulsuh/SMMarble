@@ -542,9 +542,10 @@ int main(int argc, const char * argv[]) {
 	}
 
 	printf("\n\nReading festival card component......\n");
-
-	while ( fscanf(fp, "%s", name) == 1 ) { //read a festival card string
-		//store the parameter set
+	
+	//정보 읽어오기
+	while ( fscanf(fp, "%s", name) == 1 ) { 
+		//파일로부터 축제 관련 정보 저장
 		void* festPtr = smmObj_genFest(name);
 
 		smmdb_addTail(LISTNO_FESTCARD, festPtr);
